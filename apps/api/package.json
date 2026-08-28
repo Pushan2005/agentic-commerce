@@ -1,15 +1,25 @@
 {
-  "name": "api",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "^1.4.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "hono": "^4.13.5"
-  }
+    "name": "api",
+    "module": "index.ts",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:seed": "bun run src/db/seed.ts",
+        "server:dev": "bun run src/index.ts --watch"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.4.0",
+        "drizzle-kit": "^0.31.10"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    },
+    "dependencies": {
+        "drizzle-orm": "^0.45.2",
+        "hono": "^4.13.5",
+        "postgres": "^3.4.9"
+    }
 }
