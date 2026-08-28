@@ -50,7 +50,22 @@ export default function ShopPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Checkout failed with status ${response.status}`);
+        const errorData = (await response
+          .json()
+          .catch(() => null)) as {
+          error?: string;
+          missingProducts?: { productId: string; name: string }[];
+        } | null;
+
+        // Drop products the API couldn't find so the cart can be retried.
+        for (const missing of errorData?.missingProducts ?? []) {
+          removeItem(missing.productId);
+        }
+
+        throw new Error(
+          errorData?.error ??
+            `Checkout failed with status ${response.status}`,
+        );
       }
 
       const result = (await response.json()) as {
@@ -68,7 +83,7 @@ export default function ShopPage() {
           : "Checkout failed. Please try again.",
       );
     }
-  }, [items, subtotal, clearCart]);
+  }, [items, subtotal, removeItem, clearCart]);
 
   const handleContinueShopping = useCallback(() => {
     setCheckoutStatus("idle");
