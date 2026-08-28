@@ -108,9 +108,11 @@ app.post("/checkout", async (c) => {
         receipt: `order_${Date.now()}`, // encode customer ID too to prevent same receipt for different customers
     });
 
+    // key_id is Razorpay's public identifier — required by checkout.js on the client.
     return c.json({
         success: true,
         order,
+        keyId: process.env.RAZORPAY_KEY_ID,
     });
 });
 

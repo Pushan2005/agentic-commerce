@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { CartItem } from "../types";
 import { formatPrice } from "../types";
 
-type CheckoutStatus = "idle" | "submitting" | "success" | "error";
+type CheckoutStatus = "idle" | "submitting" | "paying" | "success" | "error";
 
 type CartPanelProps = {
   open: boolean;
@@ -13,6 +13,7 @@ type CartPanelProps = {
   checkoutStatus: CheckoutStatus;
   checkoutError: string | null;
   orderId: string | null;
+  paymentId: string | null;
   onClose: () => void;
   onSetQuantity: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
@@ -27,6 +28,7 @@ export function CartPanel({
   checkoutStatus,
   checkoutError,
   orderId,
+  paymentId,
   onClose,
   onSetQuantity,
   onRemove,
@@ -94,11 +96,16 @@ export function CartPanel({
               &#10003;
             </div>
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Order placed!
+              Payment successful!
             </h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Your payment was initiated successfully.
+              Your payment went through and your order is confirmed.
             </p>
+            {paymentId ? (
+              <p className="rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs break-all text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                Payment ID: {paymentId}
+              </p>
+            ) : null}
             {orderId ? (
               <p className="rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs break-all text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                 Order ID: {orderId}
@@ -169,12 +176,17 @@ export function CartPanel({
               <button
                 type="button"
                 onClick={onCheckout}
-                disabled={checkoutStatus === "submitting"}
+                disabled={
+                  checkoutStatus === "submitting" ||
+                  checkoutStatus === "paying"
+                }
                 className="flex w-full items-center justify-center rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
               >
                 {checkoutStatus === "submitting"
-                  ? "Processing checkout…"
-                  : `Checkout · ${formatPrice(subtotal, currency)}`}
+                  ? "Creating order…"
+                  : checkoutStatus === "paying"
+                    ? "Complete the payment in the Razorpay window…"
+                    : `Checkout · ${formatPrice(subtotal, currency)}`}
               </button>
             </footer>
           </>

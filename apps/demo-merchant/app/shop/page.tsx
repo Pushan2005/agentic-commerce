@@ -6,11 +6,17 @@ import { ProductCard } from "./components/product-card";
 import { CartPanel } from "./components/cart-panel";
 import { useCart } from "./use-cart";
 import { useProducts } from "./use-products";
+import { loadRazorpayScript } from "./razorpay";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-type CheckoutStatus = "idle" | "submitting" | "success" | "error";
+type CheckoutStatus = "idle" | "submitting" | "paying" | "success" | "error";
+
+type PaymentSuccess = {
+  paymentId: string;
+  orderId: string;
+};
 
 export default function ShopPage() {
   const { productsState, retry: retryProducts } = useProducts(API_BASE_URL);
@@ -18,6 +24,10 @@ export default function ShopPage() {
   const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>("idle");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState<PaymentSuccess | null>(
+    null,
+  );
 
   const {
     items,
@@ -69,12 +79,60 @@ export default function ShopPage() {
       }
 
       const result = (await response.json()) as {
-        order?: { id?: string };
+        order?: { id: string; amount: number; currency: string };
+        keyId?: string;
       };
 
-      setOrderId(result.order?.id ?? null);
-      setCheckoutStatus("success");
-      clearCart();
+      if (!result.order?.id) {
+        throw new Error(
+          "Checkout response did not include a Razorpay order.",
+        );
+      }
+
+      if (!result.keyId) {
+        throw new Error(
+          "API did not return a Razorpay key. Is RAZORPAY_KEY_ID configured on the server?",
+        );
+      }
+
+      setOrderId(result.order.id);
+      setCheckoutStatus("paying");
+
+      await loadRazorpayScript();
+
+      const razorpay = new window.Razorpay!({
+        key: result.keyId,
+        order_id: result.order.id,
+        amount: result.order.amount,
+        currency: result.order.currency,
+        name: "QuickMart",
+        description: "QuickMart order payment",
+        prefill: {
+          name: "Demo Customer",
+          email: "demo@example.com",
+          contact: "9999999999",
+        },
+        theme: { color: "#10b981" },
+        // Fires when the payment succeeds. UI-only confirmation for now —
+        // signature verification / order persistence is a backend TODO.
+        handler: (response) => {
+          setPaymentId(response.razorpay_payment_id);
+          setPaymentSuccess({
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+          });
+          setCheckoutStatus("success");
+          clearCart();
+        },
+        modal: {
+          ondismiss: () => {
+            // User closed the payment window — back to the cart, keep its contents.
+            setCheckoutStatus("idle");
+          },
+        },
+      });
+
+      razorpay.open();
     } catch (error) {
       setCheckoutStatus("error");
       setCheckoutError(
@@ -125,6 +183,28 @@ export default function ShopPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+        {paymentSuccess ? (
+          <div
+            role="status"
+            className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900 dark:bg-green-900/30"
+          >
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              &#10003; Payment successful! Payment ID:{" "}
+              <span className="font-mono break-all">
+                {paymentSuccess.paymentId}
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setPaymentSuccess(null)}
+              aria-label="Dismiss payment confirmation"
+              className="shrink-0 text-green-600 transition-colors hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+            >
+              &#10005;
+            </button>
+          </div>
+        ) : null}
+
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
             Shop
@@ -213,6 +293,7 @@ export default function ShopPage() {
         checkoutStatus={checkoutStatus}
         checkoutError={checkoutError}
         orderId={orderId}
+        paymentId={paymentId}
         onClose={() => setIsCartOpen(false)}
         onSetQuantity={setQuantity}
         onRemove={removeItem}

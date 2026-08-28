@@ -72,7 +72,18 @@ Each entry = one test case with a short description of what to assert.
 - [ ] on 400 with missing products: red error banner shows the API's message ("Product(s) not found in DB: X") AND the missing products are removed from the cart so a retry succeeds
 - [ ] on 400 with unknown error shape: generic "Checkout failed with status 400" shown, cart untouched
 - [ ] on network failure: "Checkout failed" message, cart contents preserved, button re-enabled
-- [ ] while submitting: button disabled + "Processing checkout…" label (no double-submit)
+- [ ] while submitting: button disabled + "Creating order…" label (no double-submit)
+
+### /shop — Razorpay payment modal
+
+- [ ] after `POST /checkout` succeeds, checkout.js is loaded once (`https://checkout.razorpay.com/v1/checkout.js`) and the Razorpay modal opens with the returned order (order_id, amount, currency, key)
+- [ ] API response missing `keyId` → error "API did not return a Razorpay key", no modal opened
+- [ ] API response missing `order.id` → error, no modal opened
+- [ ] completing a TEST MODE payment (test card 4111 1111 1111 1111, any future expiry, any CVV — or UPI `success@razorpay`) shows: drawer success screen "Payment successful!" with Payment ID + Order ID, AND a dismissible green "Payment successful!" banner on the /shop page
+- [ ] after payment success the cart is fully cleared (header badge 0, drawer empty, localStorage `quickmart.cart.v1` empty)
+- [ ] closing the Razorpay modal (ondismiss) returns to the normal cart view with contents preserved and checkout re-enabled
+- [ ] Razorpay script fails to load (offline/blocked) → "Failed to load the Razorpay checkout script." error, cart preserved
+- [ ] NOTE (production TODO): the `handler` response's `razorpay_signature` is NOT verified server-side yet — the success indication is UI-only. Add a `/verify-payment` (or webhook) endpoint before real money is involved
 
 ### /shop — API base URL config
 
