@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { createRazorpayOrder } from "./razorpay";
+import { db } from "./db";
 
 const app = new Hono();
 
@@ -7,6 +8,10 @@ app.get("/health", (c) => {
     return c.json({
         status: "ok",
     });
+});
+
+app.get("/products", async (c) => {
+    //
 });
 
 app.post("/checkout", async (c) => {
