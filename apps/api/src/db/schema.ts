@@ -451,71 +451,6 @@ export const customers = pgTable(
 );
 
 // done
-export const payments = pgTable(
-    "payments",
-    {
-        id: uuid("id").defaultRandom().primaryKey(),
-
-        merchantId: uuid("merchant_id")
-            .notNull()
-            .references(() => merchants.id),
-
-        checkoutSessionId: uuid("checkout_session_id").references(
-            () => checkoutSessions.id,
-        ),
-
-        orderId: uuid("order_id").references(() => orders.id),
-
-        provider: paymentProviderEnum("provider").notNull(),
-
-        status: paymentStatusEnum("status").notNull().default("pending"),
-
-        amount: integer("amount").notNull(),
-
-        currency: varchar("currency", {
-            length: 3,
-        }).notNull(),
-
-        providerOrderId: varchar("provider_order_id", { length: 200 }),
-
-        providerPaymentId: varchar("provider_payment_id", { length: 200 }),
-
-        providerData: jsonb("provider_data"),
-
-        createdAt: timestamp("created_at", {
-            withTimezone: true,
-        })
-            .defaultNow()
-            .notNull(),
-
-        updatedAt: timestamp("updated_at", {
-            withTimezone: true,
-        })
-            .defaultNow()
-            .notNull(),
-
-        capturedAt: timestamp("captured_at", {
-            withTimezone: true,
-        }),
-    },
-    (table) => ({
-        merchantIdx: index("payments_merchant_idx").on(table.merchantId),
-
-        checkoutIdx: index("payments_checkout_idx").on(table.checkoutSessionId),
-
-        orderIdx: index("payments_order_idx").on(table.orderId),
-
-        providerOrderIdx: index("payments_provider_order_idx").on(
-            table.providerOrderId,
-        ),
-
-        providerPaymentIdx: index("payments_provider_payment_idx").on(
-            table.providerPaymentId,
-        ),
-    }),
-); // might have to remove this
-
-// done
 export const addresses = pgTable("addresses", {
     id: uuid("id").defaultRandom().primaryKey(),
 
@@ -736,6 +671,8 @@ export const merchantPaymentHandlers = pgTable(
 export const agentSessions = pgTable("agent_sessions", {
     id: uuid("id").defaultRandom().primaryKey(),
 
+    agentMetadata: jsonb("agent_metadata"),
+
     checkoutSessionId: uuid("checkout_session_id").references(
         () => checkoutSessions.id,
     ),
@@ -753,6 +690,7 @@ export const agentSessions = pgTable("agent_sessions", {
     }),
 });
 
+// done
 export const agentInteractions = pgTable(
     "agent_interactions",
     {
@@ -777,6 +715,8 @@ export const agentInteractions = pgTable(
         request: jsonb("request"),
 
         response: jsonb("response"),
+
+        error: jsonb("error"), // to store whatever error is thrown, useful for auditing
 
         metadata: jsonb("metadata"),
 
