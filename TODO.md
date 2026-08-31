@@ -1,0 +1,2 @@
+- [] add ./well-known/ucp
+- [] change to accomodate one merchant at a time, we will deploy different instances for each merchant and later decide what data flows into our DB from all the merchants (audit trail, compliance etc)
