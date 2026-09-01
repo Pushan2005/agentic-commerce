@@ -18,6 +18,7 @@
         "typescript": "^5"
     },
     "dependencies": {
+        "@ucp-js/sdk": "^0.4.6",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.13.5",
         "postgres": "^3.4.9"

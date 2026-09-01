@@ -5,11 +5,12 @@ import {
     products,
     customers,
     addresses,
+    merchantPaymentHandlers,
 } from "./schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 async function seed() {
-    console.log("🌱 Seeding database...");
+    console.log("🌱 Seeding database...\n");
 
     // ------------------------------------------------------------
     // Merchant
@@ -59,10 +60,6 @@ async function seed() {
         })
         .returning();
 
-    if (!groceries) {
-        throw new Error("Failed to create Groceries category");
-    }
-
     const [electronics] = await db
         .insert(categories)
         .values({
@@ -78,8 +75,8 @@ async function seed() {
         })
         .returning();
 
-    if (!electronics) {
-        throw new Error("Failed to create Electronics category");
+    if (!groceries || !electronics) {
+        throw new Error("Failed to create categories");
     }
 
     console.log(`✓ Category: ${groceries.name}`);
@@ -100,9 +97,13 @@ async function seed() {
 
             description: "Aromatic spice blend for making flavorful biryani.",
 
-            // ₹120 = 12,000 paise
+            // ₹120
             price: 12000,
             currency: "INR",
+
+            imageUrl:
+                "https://images.unsplash.com/photo-1596040033229-a9821ebd058d",
+            sku: "QM-GRO-001",
 
             isActive: true,
         })
@@ -115,15 +116,14 @@ async function seed() {
                     "Aromatic spice blend for making flavorful biryani.",
                 price: 12000,
                 currency: "INR",
+                imageUrl:
+                    "https://images.unsplash.com/photo-1596040033229-a9821ebd058d",
+                sku: "QM-GRO-001",
                 isActive: true,
                 updatedAt: new Date(),
             },
         })
         .returning();
-
-    if (!biryaniMasala) {
-        throw new Error("Failed to create Biryani Masala");
-    }
 
     const [inductionStove] = await db
         .insert(products)
@@ -137,9 +137,13 @@ async function seed() {
             description:
                 "Compact induction stove suitable for everyday cooking.",
 
-            // ₹1,499 = 149,900 paise
+            // ₹1,499
             price: 149900,
             currency: "INR",
+
+            imageUrl:
+                "https://images.unsplash.com/photo-1556911220-e15b29be8c8f",
+            sku: "QM-ELC-001",
 
             isActive: true,
         })
@@ -152,14 +156,17 @@ async function seed() {
                     "Compact induction stove suitable for everyday cooking.",
                 price: 149900,
                 currency: "INR",
+                imageUrl:
+                    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f",
+                sku: "QM-ELC-001",
                 isActive: true,
                 updatedAt: new Date(),
             },
         })
         .returning();
 
-    if (!inductionStove) {
-        throw new Error("Failed to create Induction Stove");
+    if (!biryaniMasala || !inductionStove) {
+        throw new Error("Failed to create products");
     }
 
     console.log(
@@ -171,7 +178,7 @@ async function seed() {
     );
 
     // ------------------------------------------------------------
-    // Demo customer
+    // Demo Customer
     // ------------------------------------------------------------
 
     const [customer] = await db
@@ -187,7 +194,6 @@ async function seed() {
 
     let demoCustomer = customer;
 
-    // If it already existed, fetch it.
     if (!demoCustomer) {
         const existing = await db
             .select()
@@ -205,7 +211,7 @@ async function seed() {
     console.log(`✓ Customer: ${demoCustomer.name}`);
 
     // ------------------------------------------------------------
-    // Demo address
+    // Demo Address
     // ------------------------------------------------------------
 
     const existingAddress = await db
@@ -236,7 +242,61 @@ async function seed() {
     }
 
     // ------------------------------------------------------------
-    // Done
+    // Merchant Payment Handler
+    // ------------------------------------------------------------
+    //
+    // This represents the merchant's actual payment configuration.
+    // No payment attempts are created here.
+    //
+    // Replace the config values with your actual Razorpay credentials
+    // or whatever shape your payment handler expects.
+    // ------------------------------------------------------------
+
+    const existingHandler = await db
+        .select()
+        .from(merchantPaymentHandlers)
+        .where(eq(merchantPaymentHandlers.merchantId, merchant.id))
+        .limit(1);
+
+    if (existingHandler.length === 0) {
+        await db.insert(merchantPaymentHandlers).values({
+            merchantId: merchant.id,
+            handlerId: "razorpay-default",
+            provider: "razorpay",
+
+            config: {
+                // Intentionally not putting real secrets in seed data.
+                keyId: "rzp_test_demo",
+            },
+
+            isActive: true,
+        });
+
+        console.log("✓ Razorpay payment handler created");
+    } else {
+        console.log("✓ Razorpay payment handler already exists");
+    }
+
+    // ------------------------------------------------------------
+    // IMPORTANT:
+    //
+    // We intentionally DO NOT seed:
+    //
+    // - checkoutSessions
+    // - checkoutItems
+    // - checkoutAddresses
+    // - orders
+    // - orderItems
+    // - orderAddresses
+    // - paymentAttempts
+    // - agentSessions
+    // - agentInteractions
+    //
+    // These represent runtime state and should be created through
+    // the actual checkout/payment/API flow.
+    //
+    // continueUrl is therefore also not populated.
+    // No fake payment attempts are created.
     // ------------------------------------------------------------
 
     console.log("\n🌱 Seed completed successfully!");
@@ -252,6 +312,10 @@ async function seed() {
     console.log("\nDemo customer:");
     console.log(`  ${demoCustomer.name}`);
     console.log(`  ID: ${demoCustomer.id}`);
+
+    console.log("\nPayment handler:");
+    console.log("  Razorpay");
+    console.log("  Handler: razorpay-default");
 }
 
 seed().catch((error) => {

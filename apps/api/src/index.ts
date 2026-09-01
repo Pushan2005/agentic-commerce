@@ -4,6 +4,7 @@ import { createRazorpayOrder } from "./razorpay";
 import { db } from "./db";
 import { products } from "./db/schema";
 import { eq, inArray } from "drizzle-orm";
+import v1 from "./ucp/v1/v1";
 
 const app = new Hono();
 
@@ -21,6 +22,62 @@ app.get("/health", (c) => {
         status: "ok",
     });
 });
+
+app.get("/.well-known/ucp", (c) => {
+    // update this later
+    return c.json({
+        ucp: {
+            version: "2026-08-25",
+
+            services: {
+                "dev.ucp.shopping": [
+                    {
+                        version: "2026-08-25",
+                        spec: "https://ucp.dev/2026-08-25/specification/overview/",
+                        transport: "rest",
+                        endpoint: "https://quickmart.example/ucp/v1",
+                        schema: "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json",
+                    },
+                ],
+            },
+
+            capabilities: {
+                "dev.ucp.shopping.catalog": [
+                    {
+                        version: "2026-08-25",
+                        spec: "https://ucp.dev/2026-08-25/specification/shopping/catalog",
+                        schema: "https://ucp.dev/2026-08-25/schemas/shopping/catalog.json",
+                    },
+                ],
+
+                "dev.ucp.shopping.checkout": [
+                    {
+                        version: "2026-08-25",
+                        spec: "https://ucp.dev/2026-08-25/specification/shopping/checkout",
+                        schema: "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json",
+                    },
+                ],
+
+                "dev.ucp.shopping.order": [
+                    {
+                        version: "2026-08-25",
+                        spec: "https://ucp.dev/2026-08-25/specification/shopping/order",
+                        schema: "https://ucp.dev/2026-08-25/schemas/shopping/order.json",
+                    },
+                ],
+            },
+
+            payment_handlers: {
+                "...": [],
+            },
+        },
+
+        keys: [],
+    });
+});
+
+// UCP v1 — stubs live in ./ucp/v1 (see endpoints.md)
+app.route("/ucp/v1", v1);
 
 app.get("/products", async (c) => {
     const activeProducts = await db
