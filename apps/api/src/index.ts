@@ -4,6 +4,14 @@ import { createRazorpayOrder } from "./razorpay";
 import { db } from "./db";
 import { products } from "./db/schema";
 import { eq, inArray } from "drizzle-orm";
+
+import type {
+    CapabilityDiscovery,
+    ServiceResponse,
+    CapabilityResponse,
+    Transport,
+} from "@ucp-js/sdk"; // for well-known/ucp endpoint
+
 import v1 from "./ucp/v1/v1";
 
 const app = new Hono();
@@ -24,7 +32,7 @@ app.get("/health", (c) => {
 });
 
 app.get("/.well-known/ucp", (c) => {
-    // update this later
+    //TODO: update this later
     return c.json({
         ucp: {
             version: "2026-08-25",

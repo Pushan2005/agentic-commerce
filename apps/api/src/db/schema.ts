@@ -41,9 +41,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
 export const paymentProviderEnum = pgEnum("payment_provider", ["razorpay"]);
 
 export const addressTypeEnum = pgEnum("address_type", ["shipping", "billing"]);
-// all above done
 
-// done
 export const merchants = pgTable(
     "merchants",
     {
@@ -74,7 +72,6 @@ export const merchants = pgTable(
     }),
 );
 
-// done
 export const categories = pgTable(
     "categories",
     {
@@ -104,7 +101,6 @@ export const categories = pgTable(
     }),
 );
 
-// done
 export const products = pgTable(
     "products",
     {
@@ -158,7 +154,6 @@ export const products = pgTable(
     }),
 );
 
-// done
 export const checkoutSessions = pgTable(
     "checkout_sessions",
     {
@@ -230,7 +225,6 @@ export const checkoutSessions = pgTable(
     }),
 );
 
-// done
 export const checkoutItems = pgTable(
     "checkout_items",
     {
@@ -252,7 +246,7 @@ export const checkoutItems = pgTable(
             length: 100,
         }),
 
-        unitPrice: integer("unit_price").notNull(), // TODO: if unit price ever changes before checkout, return an error saying the price has changed
+        unitPrice: integer("unit_price").notNull(), // unit price may change before checkout
 
         quantity: integer("quantity").notNull(),
 
@@ -273,7 +267,6 @@ export const checkoutItems = pgTable(
     }),
 );
 
-// done
 export const checkoutAddresses = pgTable(
     "checkout_addresses",
     {
@@ -321,7 +314,6 @@ export const checkoutAddresses = pgTable(
     }),
 );
 
-// done
 export const orders = pgTable(
     "orders",
     {
@@ -377,7 +369,6 @@ export const orders = pgTable(
     }),
 );
 
-// done
 export const orderItems = pgTable(
     "order_items",
     {
@@ -416,7 +407,6 @@ export const orderItems = pgTable(
     }),
 );
 
-// done
 export const customers = pgTable(
     "customers",
     {
@@ -450,7 +440,6 @@ export const customers = pgTable(
     }),
 );
 
-// done
 export const addresses = pgTable("addresses", {
     id: uuid("id").defaultRandom().primaryKey(),
 
@@ -481,7 +470,6 @@ export const addresses = pgTable("addresses", {
         .notNull(),
 }); // reusable addresses for customers
 
-// done
 export const orderAddresses = pgTable(
     "order_addresses",
     {
@@ -625,8 +613,6 @@ export const paymentAttempts = pgTable(
 //                     razorpayPaymentId = pay_003
 //                     status = captured
 
-// ----------------------
-
 export const merchantPaymentHandlers = pgTable(
     "merchant_payment_handlers",
     {
@@ -690,7 +676,6 @@ export const agentSessions = pgTable("agent_sessions", {
     }),
 });
 
-// done
 export const agentInteractions = pgTable(
     "agent_interactions",
     {

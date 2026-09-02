@@ -1,5 +1,12 @@
 import { Hono } from "hono";
 
+import type {
+    Quantity,
+    LineItemQuantityRef,
+    LineItemStatus,
+    TotalResponse,
+} from "@ucp-js/sdk";
+
 // UCP order service — mounted at /ucp/v1/orders by v1.ts.
 const app = new Hono()
     // TODO: implement order retrieval.
