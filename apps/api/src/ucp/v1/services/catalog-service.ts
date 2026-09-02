@@ -8,12 +8,12 @@ import type {
     GetProductRequest,
     SearchResponseProduct,
     LookupResponseProduct,
+    GetProductResponse,
 } from "@ucp-js/sdk";
 
 import type { InferSelectModel } from "drizzle-orm";
 
 type DbProduct = InferSelectModel<typeof products>;
-type CatalogProduct = SearchResponseProduct & LookupResponseProduct;
 
 export const catalogService = {
     async search({
@@ -45,7 +45,7 @@ export const catalogService = {
                 ),
             );
 
-        return rows.map(mapProductToUcpProduct);
+        return rows.map(mapProductToSearchResponseProduct);
     },
 
     async lookup({
@@ -67,21 +67,41 @@ export const catalogService = {
                     inArray(products.id, ids),
                 ),
             );
-        return rows.map(mapProductToUcpProduct);
+        return rows.map(mapProductToLookupResponseProduct);
     },
 
-    async getProduct({
+    async getProductResponse({
         merchantId,
+        ucpVersion,
         request,
     }: {
         merchantId: string;
+        ucpVersion: string;
         request: GetProductRequest;
     }) {
+        const { id } = request;
         // DB query
+        const row = await db
+            .select()
+            .from(products)
+            .where(
+                and(
+                    eq(products.merchantId, merchantId),
+                    eq(products.isActive, true),
+                    eq(products.id, id),
+                ),
+            );
+
+        const product = row[0];
+        return product
+            ? mapProductToGetProductResponse(product, ucpVersion)
+            : undefined;
     },
 };
 
-export function mapProductToUcpProduct(product: DbProduct): CatalogProduct {
+export function mapProductToSearchResponseProduct(
+    product: DbProduct,
+): SearchResponseProduct {
     return {
         id: product.id,
         title: product.name,
@@ -97,5 +117,54 @@ export function mapProductToUcpProduct(product: DbProduct): CatalogProduct {
             },
         },
         variants: [],
+    };
+}
+
+export function mapProductToLookupResponseProduct(
+    product: DbProduct,
+): LookupResponseProduct {
+    return {
+        id: product.id,
+        title: product.name,
+        description: { plain: product.description ?? "" },
+        price_range: {
+            max: {
+                currency: product.currency,
+                amount: product.price,
+            },
+            min: {
+                currency: product.currency,
+                amount: product.price,
+            },
+        },
+        variants: [],
+    };
+}
+
+export function mapProductToGetProductResponse(
+    product: DbProduct,
+    ucpVersion: string,
+): GetProductResponse {
+    return {
+        ucp: {
+            version: ucpVersion,
+            status: "success",
+        },
+        product: {
+            id: product.id,
+            title: product.name,
+            description: { plain: product.description ?? "" },
+            price_range: {
+                max: {
+                    currency: product.currency,
+                    amount: product.price,
+                },
+                min: {
+                    currency: product.currency,
+                    amount: product.price,
+                },
+            },
+            variants: [],
+        },
     };
 }

@@ -14,9 +14,15 @@ import type {
     LookupRequest,
     LookupResponse,
     LookupResponseProduct,
+    GetProductRequest,
+    GetProductResponse,
 } from "@ucp-js/sdk";
 
-import { SearchRequestSchema, LookupRequestSchema } from "@ucp-js/sdk";
+import {
+    SearchRequestSchema,
+    LookupRequestSchema,
+    GetProductRequestSchema,
+} from "@ucp-js/sdk";
 import { catalogService } from "./services/catalog-service";
 
 // UCP catalog service — mounted at /ucp/v1/catalog by v1.ts.
@@ -91,17 +97,34 @@ app.post("/lookup", async (c) => {
     return c.json(response);
 });
 
-app.post("/product", (c) => {
-    return c.json({ message: "Not implemented" }, 501);
+app.post("/product", async (c) => {
+    const requestJson = await c.req.json();
+    const merchantId = MERCHANT_ID;
+
+    const result = GetProductRequestSchema.safeParse(requestJson);
+    if (!result.success) {
+        return c.json(
+            {
+                message: "Invalid request body",
+                details: result.error.flatten(),
+            },
+            400,
+        );
+    }
+
+    const requestBody: GetProductRequest = result.data;
+    const UcpProductResponse: GetProductResponse | undefined =
+        await catalogService.getProductResponse({
+            merchantId,
+            request: requestBody,
+            ucpVersion: UCP_VERSION,
+        });
+
+    if (!UcpProductResponse) {
+        return c.json({ message: "Product not found" }, 404);
+    }
+
+    return c.json(UcpProductResponse);
 });
 
 export default app;
-
-// mapping for lookup:
-// UCP ItemReference
-//         ↓
-// products.id
-//         ↓
-// DB product
-//         ↓
-// UCP item/product response
